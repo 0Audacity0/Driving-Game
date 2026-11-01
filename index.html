@@ -80,7 +80,7 @@ function resetCars(){
   for(let i=0;i<90;i++){const c={col:cols[i%cols.length]};spawn(c,false);cars.push(c)}
 }
 const seg=z=>S[Math.floor((((z%trackLen)+trackLen)%trackLen)/segL)];
-let pos=0,px=0,sp=0,hp=100,nos=60,score=0,best=0,state='title',raceMap=0,raceDist=0,raceBots=[],raceWon=false,raceModeActive=false,paused=false,pauseFrom='play',shake=0,skyOff=0,tick=0,tu=0,fade=0,bflash=0,thr=maxS*100/290,tod=.02,mult=1,mt=0,msg='',mg=0,jy=0,vy=0,ot=0,rb=900,nitOn=false,fogc='#fff';
+let pos=0,px=0,sp=0,hp=100,nos=60,score=0,best=0,state='title',raceMap=0,raceDist=0,raceBots=[],raceWon=false,raceModeActive=false,paused=false,pauseFrom='play',shake=0,skyOff=0,tick=0,tu=0,fade=0,bflash=0,thr=maxS*100/290,tod=.02,mult=1,mt=0,msg='',mg=0,jy=0,vy=0,ot=0,nitOn=false,fogc='#fff';
 const k={l:0,r:0,u:0,d:0,n:0};
 const CARS=[
  {n:'ROOKIE',p:0,spd:1,hnd:1,nos:1,h:.55},
@@ -98,7 +98,7 @@ try{const d=JSON.parse(localStorage.getItem('roadblaze1')||'null');if(d){money=d
 function driving(){return state==='play'||state==='race'}
 const MAPS=[{name:'SUNSET SPRINT',len:3000,curve:1.0,sky:0,reward:100},{name:'CANYON RUN',len:4000,curve:1.25,sky:1,reward:180},{name:'NEON CIRCUIT',len:5000,curve:1.5,sky:2,reward:300},{name:'MOUNTAIN PASS',len:6000,curve:1.8,sky:3,reward:450},{name:'STORM HIGHWAY',len:7500,curve:2.0,sky:0,reward:650},{name:'BLAZE GRAND PRIX',len:9000,curve:2.3,sky:1,reward:900}];
 function beginRace(){reset();state='race';raceModeActive=true;raceDist=0;raceWon=false;raceBots=[];paused=false;say('RACE START');}
-function reset(){raceModeActive=false;raceDist=0;raceWon=false;S=segs;dir=1;pos=0;px=0;sp=0;hp=100;nos=60;score=0;mult=1;mt=0;jy=0;vy=0;ot=0;rb=900;msg='';shake=0;tu=0;fade=0;bflash=0;for(const o of orbs)o.cd=0;cops.length=0;heat=0;calm=0;dist=0;nextPay=10000;pm=sel;resetCars();state='play'}
+function reset(){raceModeActive=false;raceDist=0;raceWon=false;S=segs;dir=1;pos=0;px=0;sp=0;hp=100;nos=60;score=0;mult=1;mt=0;jy=0;vy=0;ot=0;msg='';shake=0;tu=0;fade=0;bflash=0;for(const o of orbs)o.cd=0;cops.length=0;heat=0;calm=0;dist=0;nextPay=10000;pm=sel;resetCars();state='play'}
 resetCars();
 let ac,osc,og,sir,sg,muted=false;
 function audio(){
@@ -146,11 +146,6 @@ const ov=(a,aw,b,bw)=>Math.abs(a-b)<(aw+bw);
 function say(s){msg=s;mg=110}
 function hurt(n,keep){if(!driving())return;hp-=n;shake=Math.max(shake,14);if(!keep){mult=1;mt=0}}
 function nearMiss(o){mult=Math.min(8,mult+1);mt=240;score+=(o?200:60)*mult;say((o?'CLOSE CALL x':'NEAR MISS x')+mult)}
-function roadblock(){
-  const zv=(pos+playerZ+segL*95)%trackLen,zf=dir>0?zv:trackLen-zv,gap=Math.floor(Math.random()*3);
-  for(let i=0;i<3;i++)if(i!==gap)cars.push({z:zf,o:dir*[-.66,0,.66][i],sp:0,col:'#eee',st:null,t:0,blk:1,cop:1,nm:0});
-  say('ROADBLOCK AHEAD');
-}
 function uturn(){if(driving()&&!tu)tu=1}
 function flipView(){
   pos=(((trackLen-pos-2*playerZ)%trackLen)+trackLen)%trackLen;
@@ -168,7 +163,6 @@ function update(){
   const ps=seg(pos+playerZ),spc=sp/maxS,nit=driving()&&k.n&&nos>0&&!tu,cs=CARS[sel];
   pos+=sp*step;tod=(tod+step/150)%1;
   if(pos>=trackLen)pos-=trackLen;
-  if(driving()&&--rb<=0){rb=1500+Math.floor(Math.random()*900);roadblock()}
   const dx=step*2*Math.min(spc,1.2)*cs.hnd;
   if(driving()){
     if(k.l&&!tu)px-=dx;
@@ -205,7 +199,7 @@ function update(){
       if(c.st==='fly'){
         c.o+=c.vo;
         if(c.t>=34){c.st='boom';c.t=0;c.sp=0;bang();if(Math.abs(vz(c)-(pos+playerZ))<segL*30)bflash=12}
-      }else if(c.t>=75){if(c.blk)c.dead=1;else spawn(c,true)}
+      }else if(c.t>=75){spawn(c,true)}
     }else{
       const dz=((vz(c)-(pos+playerZ))%trackLen+trackLen*1.5)%trackLen-trackLen/2;
       const vv=dir*c.sp,cl=sp-vv;
@@ -215,7 +209,6 @@ function update(){
         if(vv<0||sp>=thr){smash(c);sp*=.85;hurt(vv<0?30:6,vv>=0)}else{sp=Math.max(0,vv*.5);hurt(10)}
       }else if(!c.nm&&jy<6&&Math.abs(dz)<100+Math.abs(cl)*step&&gap<.42){c.nm=1;nearMiss(vv<0)}
       if(c.nm&&Math.abs(dz)>segL*6)c.nm=0;
-      if(c.blk&&dz<-segL*25)c.dead=1;
     }
     c.z=(c.z+c.sp*step)%trackLen;
   }
@@ -539,7 +532,7 @@ function draw(){
     if(state==='title'){
       txt('DRIVING GAME',W/2,88,24,'#ff4a4a','center');
       txt('PRESS ENTER OR TAP TO START',W/2,112,10,'#fff','center');
-      txt('NEAR MISSES, NITRO, RAMPS, ROADBLOCKS',W/2,130,8,'#ffd84a','center');
+      txt('NEAR MISSES, NITRO, RAMPS',W/2,130,8,'#ffd84a','center');
     }else{
       txt(raceModeActive?(raceWon?'RACE WON':'RACE FINISHED'):'YOU\'VE CRASHED',W/2,82,18,raceModeActive?'#ffd84a':'#ff4a4a','center');
       txt('SCORE '+Math.floor(score)+'   BEST '+best,W/2,106,10,'#fff','center');
